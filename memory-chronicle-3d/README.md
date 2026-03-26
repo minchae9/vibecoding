@@ -1,16 +1,173 @@
-# React + Vite
+# Memory Chronicle 3D
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+3차원 자아 연대기 - 나의 생각을 시공간에서 탐험하고 과거의 나와 대화하는 웹 애플리케이션
 
-Currently, two official plugins are available:
+## 소개
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**Memory Chronicle 3D**는 사용자의 생각과 성찰을 3D 공간에 시각화하는 개인 기록 도구입니다. 생각들을 노드(Node)로 표현하고, 키워드 기반의 유사도와 시간적 순서에 따라 연결하여 하나의 거대한 사고 네트워크를 구축합니다.
 
-## React Compiler
+### 핵심 컨셉
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **3D 그래프 시각화**: 생각들을 3차원 공간에 배치하여 전체적인 패턴과 연결 관계를 한눈에 파악
+- **과거와의 대화**: 새로운 생각을 입력하면 가장 유사한 과거의 생각을 찾아 연결하고, 성찰을 유도하는 질문 제시
+- **감정 뉘앙스 분석**: 각 생각의 감정적 색채(-1 부정 ~ +1 긍정)를 시각적으로 표현
+- **깊이 기반 확장**: 성찰 답변을 통해 더 깊은 수준의 생각 노드 생성
 
-## Expanding the ESLint configuration
+## 주요 기능
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 1. 3D 생각 네트워크 (`Graph3D`)
+- **Force-Directed Graph**: react-force-graph-3d 라이브러리를 활용한 물리 기반 레이아웃
+- **노드 시각화**:
+  - 색상: 감정 뉘앙스 (빨강=부정 ~ 파랑=긍정)
+  - 크기: 생각의 깊이 (depth 1~5)
+  - 위치: 키워드 클러스터링 + 시간적 분산
+- **링크 타입**:
+  - `temporal`: 시간순 연결 (약한 연결)
+  - `semantic`: 키워드 유사성 기반 연결
+  - `bridge`: 새 입력과 과거 생각 간의 다리 연결
+  - `deepening`: 성찰을 통해 깊어진 생각 연결
+- **인터랙션**:
+  - 드래그로 회전, 스크롤로 확대/축소
+  - 노드 클릭 시 상세 정보 표시 및 카메라 이동
+  - 호버 시 툴팁 표시
+
+### 2. 검색 기능 (`SearchBar`)
+- 키워드 확장 검색 지원
+- 예: "성장" 검색 시 "배움", "발견", "발전" 등 관련 키워드도 함께 검색
+- 검색어와 관련된 노드만 하이라이트, 나머지는 투명하게 처리
+
+### 3. 생각 입력 (`ThoughtInput`)
+- 하단 입력창에서 현재 생각을 자유롭게 기록
+- 입력 시 자동으로 키워드 추출 및 유사도 분석
+- 가장 유사한 과거 노드를 찾아 연결
+
+### 4. 성찰 패널 (`ReflectionPanel`)
+- 과거의 생각과 현재 입력을 비교하는 "역지문(Reverse Question)" 생성
+- 타이핑 효과로 질문을 순차적으로 표시
+- 답변 입력 시 더 깊은 수준(depth +1)의 새로운 노드 생성
+
+### 5. 생각 인스펙터 (`ThoughtInspector`)
+- 노드 클릭 시 상세 정보 패널 표시
+- 표시 정보:
+  - 기록 일시
+  - 키워드 해시태그
+  - 생각 내용
+  - 뉘앙스 게이지 (부정 ~ 긍정)
+  - 깊이 게이지 (1~5단계)
+  - 문맥 요약
+  - 부모 생각 (깊이진 경우)
+
+## 기술 스택
+
+| 구분 | 기술 |
+|------|------|
+| 프레임워크 | React 19 |
+| 빌드 도구 | Vite 8 |
+| 3D 그래프 | react-force-graph-3d, Three.js |
+| 스타일링 | CSS (Glassmorphism 디자인) |
+| 상태 관리 | React useState/useRef |
+
+## 프로젝트 구조
+
+```
+src/
+├── App.jsx                    # 메인 애플리케이션 컴포넌트
+├── App.css                    # 전역 스타일
+├── main.jsx                   # 엔트리 포인트
+├── components/
+│   ├── Graph3D.jsx            # 3D 포스 그래프 렌더링
+│   ├── SearchBar.jsx          # 키워드 검색 바
+│   ├── ThoughtInput.jsx       # 새 생각 입력 폼
+│   ├── ThoughtInspector.jsx   # 노드 상세 정보 패널
+│   └── ReflectionPanel.jsx    # 성찰 질문 및 답변 패널
+├── utils/
+│   ├── colorUtils.js          # 뉘앙스 → 색상 변환
+│   ├── similarityUtils.js     # 키워드/텍스트 유사도 계산
+│   └── reverseQuestionGenerator.js  # 역지문 생성
+├── data/
+│   └── dummyData.js           # 50개 샘플 데이터 생성
+└── assets/                    # 이미지 리소스
+```
+
+## 데이터 구조
+
+### 노드 (Node)
+```javascript
+{
+  id: "thought_001",           // 고유 ID
+  text: "생각 내용...",         // 생각 텍스트
+  timestamp: "2024-01-15T...",  // 기록 시각 (ISO)
+  nuance: 0.35,                // 감정 뉘앙스 (-1 ~ 1)
+  depth: 3,                    // 생각의 깊이 (1 ~ 5)
+  keywords: ["성장", "배움"],   // 키워드 배열
+  context: "성장에 관한 생각",   // 문맥 요약
+  coords: { x, y, z },         // 3D 좌표
+  parentThought: { ... }       // (선택) 부모 생각 정보
+}
+```
+
+### 링크 (Link)
+```javascript
+{
+  source: "thought_001",       // 출발 노드 ID
+  target: "thought_002",       // 도착 노드 ID
+  type: "semantic",            // 링크 타입
+  strength: 0.8,               // 연결 강도
+  commonKeywords: ["성장"]     // 공통 키워드
+}
+```
+
+## 설치 및 실행
+
+```bash
+# 의존성 설치
+npm install
+
+# 개발 서버 실행
+npm run dev
+
+# 프로덕션 빌드
+npm run build
+
+# 빌드 미리보기
+npm run preview
+```
+
+## 알고리즘 상세
+
+### 유사도 계산 (`similarityUtils.js`)
+
+1. **키워드 확장**: 각 키워드를 유사어군으로 확장 (예: "불안" → ["불안", "두려움", "걱정", "긴장"])
+2. **Jaccard 유사도**: 확장된 키워드 집합 간 교집합/합집합 비율 계산
+3. **텍스트 유사도**: 불용어 제거 후 단어 기반 Jaccard 유사도
+4. **시간 가중치**: 최신 기록일수록 높은 점수
+5. **Bridge Score**: `의미적유사도(70%) + 시간가중치(30%)`
+
+### 뉘앙스 색상 매핑 (`colorUtils.js`)
+
+| 뉘앙스 값 | 색상 | 의미 |
+|-----------|------|------|
+| -1.0 | 빨강 (#FF2D2D) | 매우 부정 |
+| -0.5 | 주황 (#FF8C00) | 부정 |
+| 0.0 | 청록 (#7FFFD4) | 중립 |
+| 0.5 | 민트 (#00FA9A) | 긍정 |
+| 1.0 | 네온 블루 (#00BFFF) | 매우 긍정 |
+
+### 역지문 생성 (`reverseQuestionGenerator.js`)
+
+5가지 템플릿을 무작위로 선택하여 다양성 확보:
+- 과거 기록과 현재 입력의 대비
+- 시간 경과에 따른 관점 변화 질문
+- 과거의 자신이 현재의 자신에게 묻는 형식
+
+## 향후 확장 계획
+
+- [ ] 실제 LLM API 연동 (Claude/OpenAI)으로 더 정교한 역지문 생성
+- [ ] 로컬 스토리지/클라우드 동기화
+- [ ] 타임라인 뷰 추가
+- [ ] 노드 편집/삭제 기능
+- [ ] 통계 대시보드 (감정 추이, 키워드 빈도 등)
+
+## 라이선스
+
+MIT License
