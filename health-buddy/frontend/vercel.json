@@ -1,0 +1,17 @@
+{
+  "buildCommand": {
+    "build": "next build",
+    "dev": "next dev"
+  },
+  "regions": {
+    "maxDuration": 60
+  },
+  "functions": {
+    "api/chat/**": {
+      "maxDuration": 60
+    },
+    "api/health/**": {
+      "maxDuration": 60
+    }
+  }
+}

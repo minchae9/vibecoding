@@ -8,7 +8,8 @@ import {
   ChevronLeft, ChevronRight, Send, Bot, User, Sparkles
 } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// API URL - 로컬은 상대 경로, 배포는 빈 문자열
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export default function Home() {
   const [currentMonth, setCurrentMonth] = useState(new Date());

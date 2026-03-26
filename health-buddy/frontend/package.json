@@ -1,5 +1,5 @@
 {
-  "name": "health-buddy-frontend",
+  "name": "health-buddy",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -13,7 +13,10 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "date-fns": "^3.6.0",
-    "lucide-react": "^0.378.0"
+    "lucide-react": "^0.378.0",
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@neondatabase/serverless": "^0.10.0",
+    "pdf-parse": "^1.1.1"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.0",
