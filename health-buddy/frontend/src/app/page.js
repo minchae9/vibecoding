@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import {
   Calendar, MessageCircle, Upload, Activity, Utensils, Heart,
   ChevronLeft, ChevronRight, Send, Bot, User, Sparkles
 } from 'lucide-react';
 
-// API URL - 로컬은 상대 경로, 배포는 빈 문자열
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export default function Home() {
@@ -19,16 +18,13 @@ export default function Home() {
   const [healthScore, setHealthScore] = useState(null);
   const [healthProfile, setHealthProfile] = useState(null);
 
-  // Chat state
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef(null);
 
-  // 오늘 날짜인지 확인
   const isToday = isSameDay(selectedDate, new Date());
 
-  // 캘린더 데이터 로드
   useEffect(() => {
     const year = format(currentMonth, 'yyyy');
     const month = format(currentMonth, 'MM');
@@ -38,7 +34,6 @@ export default function Home() {
       .catch(console.error);
   }, [currentMonth]);
 
-  // 선택된 날짜의 타임라인 로드
   useEffect(() => {
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     fetch(`${API_URL}/api/health/timeline/${dateStr}`)
@@ -47,7 +42,6 @@ export default function Home() {
       .catch(console.error);
   }, [selectedDate]);
 
-  // 오늘의 세션 로드
   useEffect(() => {
     if (isToday) {
       fetch(`${API_URL}/api/chat/session`)
@@ -61,7 +55,6 @@ export default function Home() {
     }
   }, [isToday]);
 
-  // 건강 프로필 로드
   useEffect(() => {
     fetch(`${API_URL}/api/health/profile`)
       .then(res => res.json())
@@ -73,7 +66,6 @@ export default function Home() {
       .catch(console.error);
   }, []);
 
-  // 건강 점수 로드
   useEffect(() => {
     fetch(`${API_URL}/api/health/score`)
       .then(res => res.json())
@@ -81,12 +73,10 @@ export default function Home() {
       .catch(console.error);
   }, [messages]);
 
-  // 채팅 스크롤
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 메시지 전송
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
@@ -94,7 +84,6 @@ export default function Home() {
     setInputMessage('');
     setIsLoading(true);
 
-    // 사용자 메시지 즉시 표시
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
 
     try {
@@ -107,7 +96,6 @@ export default function Home() {
 
       setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
 
-      // 타임라인 새로고침
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const tlRes = await fetch(`${API_URL}/api/health/timeline/${dateStr}`);
       const tlData = await tlRes.json();
@@ -123,7 +111,6 @@ export default function Home() {
     setIsLoading(false);
   };
 
-  // PDF 업로드
   const handlePdfUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -132,7 +119,7 @@ export default function Home() {
     formData.append('pdf', file);
 
     try {
-      const res = await fetch(`${API_URL}/api/health/upload-pdf', {
+      const res = await fetch(`${API_URL}/api/health/upload-pdf`, {
         method: 'POST',
         body: formData
       });
@@ -147,12 +134,10 @@ export default function Home() {
     }
   };
 
-  // 캘린더 날짜 생성
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  // 이벤트 아이콘
   const getEventIcon = (type) => {
     switch (type) {
       case 'meal': return <Utensils className="w-4 h-4" />;
@@ -162,7 +147,6 @@ export default function Home() {
     }
   };
 
-  // 건강 점수 색상
   const getScoreColor = (score) => {
     if (score >= 80) return 'bg-green-500';
     if (score >= 60) return 'bg-lime-500';
@@ -175,23 +159,19 @@ export default function Home() {
     <main className="min-h-screen p-4 md:p-6">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* 왼쪽: 캘린더 + 타임라인 */}
         <div className="lg:col-span-2 space-y-6">
-
-          {/* 헤더 */}
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                 <Heart className="w-8 h-8 text-rose-500" />
                 Health Buddy
               </h1>
-              <p className="text-gray-500 mt-1">AI 기반 건강 의사결정 지원</p>
+              <p className="text-gray-500 mt-1">AI Health Decision Support</p>
             </div>
 
-            {/* PDF 업로드 */}
             <label className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer transition">
               <Upload className="w-4 h-4" />
-              <span>검진결과 업로드</span>
+              <span>Upload Health Report</span>
               <input
                 type="file"
                 accept=".pdf"
@@ -201,7 +181,6 @@ export default function Home() {
             </label>
           </div>
 
-          {/* 캘린더 */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <button
@@ -211,7 +190,7 @@ export default function Home() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <h2 className="text-lg font-semibold">
-                {format(currentMonth, 'yyyy년 MM월', { locale: ko })}
+                {format(currentMonth, 'yyyy-MM', { locale: ko })}
               </h2>
               <button
                 onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
@@ -222,14 +201,12 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-7 gap-2">
-              {/* 요일 헤더 */}
-              {['일', '월', '화', '수', '목', '금', '토'].map((day, i) => (
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
                 <div key={day} className={`text-center text-sm font-medium py-2 ${i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-gray-500'}`}>
                   {day}
                 </div>
               ))}
 
-              {/* 날짜 */}
               {days.map((day, i) => {
                 const dateStr = format(day, 'yyyy-MM-dd');
                 const sessionData = calendarData.sessions?.find(s => s.session_date === dateStr);
@@ -260,15 +237,14 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 타임라인 */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-500" />
-              {format(selectedDate, 'M월 d일 (E)', { locale: ko })} 타임라인
+              {format(selectedDate, 'M/d (E)', { locale: ko })} Timeline
             </h3>
 
             {timelineEvents.length === 0 ? (
-              <p className="text-gray-400 text-center py-8">기록된 활동이 없습니다</p>
+              <p className="text-gray-400 text-center py-8">No activities recorded</p>
             ) : (
               <div className="space-y-3">
                 {timelineEvents.map((event, i) => (
@@ -293,9 +269,8 @@ export default function Home() {
             )}
           </div>
 
-          {/* TMI / 일기 영역 */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-4">📝 오늘의 TMI</h3>
+            <h3 className="text-lg font-semibold mb-4">Today&apos;s TMI</h3>
             <div className="prose prose-sm max-w-none text-gray-600">
               {messages.length > 0 ? (
                 <div className="space-y-2">
@@ -306,12 +281,11 @@ export default function Home() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-400">대화를 시작하면 여기에 요약이 표시됩니다</p>
+                <p className="text-gray-400">Start a conversation to see your summary here</p>
               )}
             </div>
           </div>
 
-          {/* Health Suitability Scale */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-4">Health Suitability Scale</h3>
             <div className="relative">
@@ -322,9 +296,9 @@ export default function Home() {
               />
             </div>
             <div className="flex justify-between mt-2 text-xs text-gray-500">
-              <span>주의 필요</span>
-              <span>보통</span>
-              <span>매우 좋음</span>
+              <span>Needs Attention</span>
+              <span>Moderate</span>
+              <span>Excellent</span>
             </div>
             {healthScore?.comment && (
               <p className="mt-4 text-center text-gray-600">{healthScore.comment}</p>
@@ -332,10 +306,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 오른쪽: 채팅 */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl shadow-sm h-[calc(100vh-2rem)] flex flex-col sticky top-4">
-            {/* 채팅 헤더 */}
             <div className="p-4 border-b">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
@@ -343,18 +315,17 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="font-semibold">Health Buddy</h3>
-                  <p className="text-xs text-gray-500">항상 여기서 대화할 수 있어요</p>
+                  <p className="text-xs text-gray-500">Always here to chat</p>
                 </div>
               </div>
             </div>
 
-            {/* 메시지 영역 */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.length === 0 && (
                 <div className="text-center text-gray-400 py-8">
                   <Bot className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>안녕하세요! 무엇을 도와드릴까요?</p>
-                  <p className="text-sm mt-2">식사, 운동, 기분 등을 자유롭게 이야기해주세요</p>
+                  <p>Hello! How can I help you today?</p>
+                  <p className="text-sm mt-2">Feel free to talk about meals, exercise, or how you&apos;re feeling</p>
                 </div>
               )}
 
@@ -400,7 +371,6 @@ export default function Home() {
               <div ref={chatEndRef} />
             </div>
 
-            {/* 입력 영역 */}
             <div className="p-4 border-t">
               <div className="flex gap-2">
                 <input
@@ -408,7 +378,7 @@ export default function Home() {
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                  placeholder="메시지를 입력하세요..."
+                  placeholder="Type a message..."
                   className="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={!isToday}
                 />
@@ -422,7 +392,7 @@ export default function Home() {
               </div>
               {!isToday && (
                 <p className="text-xs text-gray-400 mt-2 text-center">
-                  오늘 날짜만 채팅할 수 있습니다
+                  You can only chat on today&apos;s date
                 </p>
               )}
             </div>

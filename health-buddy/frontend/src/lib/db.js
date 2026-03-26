@@ -80,7 +80,6 @@ async function initDatabase() {
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Database init error:', error);
-    // 테이블이 이미 존재하는 경우 등 무시
     initialized = true;
   }
 }
