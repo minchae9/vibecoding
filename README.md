@@ -78,3 +78,6 @@
   - Benefits: Cleaner codebase with less duplication
   - Costs: Additional time and API usage for each query directory edit
   - Recommendation: Only monitor critical directories to minimize overhead
+ 
+---
+![](certificate-pzk6qvoux9z3-1776512872-1.png)
