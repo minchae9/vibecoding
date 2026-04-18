@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { Category, CATEGORY_CONFIG } from '@/lib/types'
 
-interface GeoResult {
+interface SearchResult {
+  title: string
+  address: string
   roadAddress: string
-  jibunAddress: string
   x: string  // longitude
   y: string  // latitude
+  category: string
 }
 
 interface Props {
@@ -24,46 +26,47 @@ interface Props {
   onClose: () => void
 }
 
+function guessCategory(category: string): Category {
+  if (category.includes('카페') || category.includes('커피')) return 'cafe'
+  if (category.includes('음식') || category.includes('식당') || category.includes('맛집')) return 'restaurant'
+  if (category.includes('관광') || category.includes('문화') || category.includes('공원')) return 'attraction'
+  if (category.includes('쇼핑') || category.includes('마트') || category.includes('백화점')) return 'shopping'
+  if (category.includes('교통') || category.includes('역') || category.includes('버스')) return 'transport'
+  return 'other'
+}
+
 export default function SearchSheet({ onSelect, onClose }: Props) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<GeoResult[]>([])
+  const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
-  const [selected, setSelected] = useState<GeoResult | null>(null)
+  const [selected, setSelected] = useState<SearchResult | null>(null)
   const [customName, setCustomName] = useState('')
   const [form, setForm] = useState({ category: 'other' as Category, visit_time: '', duration_min: 60, memo: '' })
 
-  function search() {
+  async function search() {
     if (!query.trim()) return
-    const naver = (window as any).naver
-    if (!naver?.maps?.Service) {
-      alert('지도가 아직 로딩 중이에요. 잠시 후 다시 시도해주세요.')
-      return
-    }
     setLoading(true)
     setSearched(true)
-    naver.maps.Service.geocode({ query: query.trim() }, (status: any, response: any) => {
-      setLoading(false)
-      if (status !== naver.maps.Service.Status.OK) {
-        setResults([])
-        return
-      }
-      setResults(response.v2.addresses || [])
-    })
+    const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`)
+    const data = await res.json()
+    setResults(data.items || [])
+    setLoading(false)
   }
 
-  function selectResult(r: GeoResult) {
+  function selectResult(r: SearchResult) {
     setSelected(r)
-    setCustomName(query.trim())
+    setCustomName(r.title)
+    setForm(f => ({ ...f, category: guessCategory(r.category) }))
   }
 
   function confirm() {
     if (!selected) return
     onSelect({
-      name: customName || selected.roadAddress || selected.jibunAddress,
+      name: customName || selected.title,
       lat: parseFloat(selected.y),
       lng: parseFloat(selected.x),
-      address: selected.roadAddress || selected.jibunAddress,
+      address: selected.roadAddress || selected.address,
       ...form,
     })
   }
@@ -81,7 +84,7 @@ export default function SearchSheet({ onSelect, onClose }: Props) {
             <div className="p-4 flex gap-2">
               <input
                 className="flex-1 border border-pink-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-300"
-                placeholder="주소 또는 장소명 검색"
+                placeholder="장소명 검색 (예: 스타벅스 강남점)"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && search()}
@@ -106,10 +109,9 @@ export default function SearchSheet({ onSelect, onClose }: Props) {
                   onClick={() => selectResult(r)}
                   className="w-full text-left p-3 rounded-xl hover:bg-pink-50 border border-transparent hover:border-pink-200 mb-2 transition"
                 >
-                  <p className="font-medium text-sm text-gray-800">{r.roadAddress || r.jibunAddress}</p>
-                  {r.roadAddress && r.jibunAddress && (
-                    <p className="text-xs text-gray-400 mt-0.5">{r.jibunAddress}</p>
-                  )}
+                  <p className="font-medium text-sm text-gray-800">{r.title}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{r.roadAddress || r.address}</p>
+                  {r.category && <p className="text-xs text-pink-400 mt-0.5">{r.category}</p>}
                 </button>
               ))}
             </div>
@@ -117,15 +119,14 @@ export default function SearchSheet({ onSelect, onClose }: Props) {
         ) : (
           <div className="overflow-y-auto flex-1 p-4 space-y-4">
             <div className="bg-pink-50 rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">선택된 주소</p>
-              <p className="text-sm text-gray-700">{selected.roadAddress || selected.jibunAddress}</p>
+              <p className="font-bold text-sm text-gray-800">{selected.title}</p>
+              <p className="text-xs text-gray-500 mt-1">{selected.roadAddress || selected.address}</p>
             </div>
 
             <div>
               <label className="text-xs font-medium text-gray-500 mb-1 block">장소 이름</label>
               <input
                 className="w-full border border-pink-200 rounded-xl px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-300"
-                placeholder="장소 이름 (예: 스타벅스 홍대점)"
                 value={customName}
                 onChange={e => setCustomName(e.target.value)}
               />

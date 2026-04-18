@@ -15,7 +15,11 @@
       "Bash(ls .vercel/project.json)",
       "Bash(vercel --prod)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "WebFetch(domain:developers.naver.com)",
+      "WebFetch(domain:api.ncloud-docs.com)",
+      "WebSearch",
+      "Bash(vercel env *)"
     ]
   }
 }

@@ -5,11 +5,11 @@ export async function GET(req: NextRequest) {
   if (!query) return NextResponse.json({ items: [] })
 
   const res = await fetch(
-    `https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=${encodeURIComponent(query)}`,
+    `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=10&sort=random`,
     {
       headers: {
-        'X-NCP-APIGW-API-KEY-ID': process.env.NAVER_CLIENT_ID!,
-        'X-NCP-APIGW-API-KEY': process.env.NAVER_CLIENT_SECRET!,
+        'X-Naver-Client-Id': process.env.NAVER_SEARCH_CLIENT_ID!,
+        'X-Naver-Client-Secret': process.env.NAVER_SEARCH_CLIENT_SECRET!,
       },
     }
   )
@@ -21,14 +21,14 @@ export async function GET(req: NextRequest) {
 
   const data = await res.json()
 
-  const items = (data.addresses || []).map((a: any) => ({
-    title: a.roadAddress || a.jibunAddress,
-    address: a.jibunAddress,
-    roadAddress: a.roadAddress,
-    // geocoding returns x=lng, y=lat as strings
-    x: a.x,
-    y: a.y,
-    category: '',
+  const items = (data.items || []).map((item: any) => ({
+    title: item.title.replace(/<[^>]+>/g, ''),
+    address: item.address,
+    roadAddress: item.roadAddress,
+    // Naver local search returns KATECH coords (multiply by 1e-7 to get decimal)
+    x: String(parseInt(item.mapx) / 1e7),  // longitude
+    y: String(parseInt(item.mapy) / 1e7),  // latitude
+    category: item.category,
   }))
 
   return NextResponse.json({ items })
