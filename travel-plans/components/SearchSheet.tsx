@@ -3,13 +3,11 @@
 import { useState } from 'react'
 import { Category, CATEGORY_CONFIG } from '@/lib/types'
 
-interface SearchResult {
-  title: string
-  address: string
+interface GeoResult {
   roadAddress: string
+  jibunAddress: string
   x: string  // longitude
   y: string  // latitude
-  category: string
 }
 
 interface Props {
@@ -28,22 +26,33 @@ interface Props {
 
 export default function SearchSheet({ onSelect, onClose }: Props) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<SearchResult[]>([])
+  const [results, setResults] = useState<GeoResult[]>([])
   const [loading, setLoading] = useState(false)
-  const [selected, setSelected] = useState<SearchResult | null>(null)
+  const [searched, setSearched] = useState(false)
+  const [selected, setSelected] = useState<GeoResult | null>(null)
   const [customName, setCustomName] = useState('')
   const [form, setForm] = useState({ category: 'other' as Category, visit_time: '', duration_min: 60, memo: '' })
 
-  async function search() {
+  function search() {
     if (!query.trim()) return
+    const naver = (window as any).naver
+    if (!naver?.maps?.Service) {
+      alert('지도가 아직 로딩 중이에요. 잠시 후 다시 시도해주세요.')
+      return
+    }
     setLoading(true)
-    const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`)
-    const data = await res.json()
-    setResults(data.items || [])
-    setLoading(false)
+    setSearched(true)
+    naver.maps.Service.geocode({ query: query.trim() }, (status: any, response: any) => {
+      setLoading(false)
+      if (status !== naver.maps.Service.Status.OK) {
+        setResults([])
+        return
+      }
+      setResults(response.v2.addresses || [])
+    })
   }
 
-  function selectResult(r: SearchResult) {
+  function selectResult(r: GeoResult) {
     setSelected(r)
     setCustomName(query.trim())
   }
@@ -51,10 +60,10 @@ export default function SearchSheet({ onSelect, onClose }: Props) {
   function confirm() {
     if (!selected) return
     onSelect({
-      name: customName || selected.roadAddress || selected.address,
+      name: customName || selected.roadAddress || selected.jibunAddress,
       lat: parseFloat(selected.y),
       lng: parseFloat(selected.x),
-      address: selected.roadAddress || selected.address,
+      address: selected.roadAddress || selected.jibunAddress,
       ...form,
     })
   }
@@ -88,7 +97,7 @@ export default function SearchSheet({ onSelect, onClose }: Props) {
 
             <div className="overflow-y-auto flex-1 px-4 pb-4">
               {loading && <p className="text-center text-gray-400 py-8">검색 중...</p>}
-              {!loading && results.length === 0 && query && (
+              {!loading && searched && results.length === 0 && (
                 <p className="text-center text-gray-300 py-8 text-sm">검색 결과가 없어요</p>
               )}
               {results.map((r, i) => (
@@ -97,9 +106,9 @@ export default function SearchSheet({ onSelect, onClose }: Props) {
                   onClick={() => selectResult(r)}
                   className="w-full text-left p-3 rounded-xl hover:bg-pink-50 border border-transparent hover:border-pink-200 mb-2 transition"
                 >
-                  <p className="font-medium text-sm text-gray-800">{r.roadAddress || r.address}</p>
-                  {r.roadAddress && r.address && (
-                    <p className="text-xs text-gray-400 mt-0.5">{r.address}</p>
+                  <p className="font-medium text-sm text-gray-800">{r.roadAddress || r.jibunAddress}</p>
+                  {r.roadAddress && r.jibunAddress && (
+                    <p className="text-xs text-gray-400 mt-0.5">{r.jibunAddress}</p>
                   )}
                 </button>
               ))}
@@ -109,14 +118,14 @@ export default function SearchSheet({ onSelect, onClose }: Props) {
           <div className="overflow-y-auto flex-1 p-4 space-y-4">
             <div className="bg-pink-50 rounded-xl p-3">
               <p className="text-xs text-gray-400 mb-1">선택된 주소</p>
-              <p className="text-sm text-gray-700">{selected.roadAddress || selected.address}</p>
+              <p className="text-sm text-gray-700">{selected.roadAddress || selected.jibunAddress}</p>
             </div>
 
             <div>
               <label className="text-xs font-medium text-gray-500 mb-1 block">장소 이름</label>
               <input
                 className="w-full border border-pink-200 rounded-xl px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-300"
-                placeholder="장소 이름 입력 (예: 스타벅스 홍대점)"
+                placeholder="장소 이름 (예: 스타벅스 홍대점)"
                 value={customName}
                 onChange={e => setCustomName(e.target.value)}
               />

@@ -45,7 +45,7 @@ export default function NaverMap({ places, transports, selectedId, initialCenter
       return
     }
     const script = document.createElement('script')
-    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${process.env.NEXT_PUBLIC_NAVER_CLIENT_ID}`
+    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${process.env.NEXT_PUBLIC_NAVER_CLIENT_ID}&submodules=geocoder`
     script.async = true
     script.onload = initMap
     document.head.appendChild(script)
