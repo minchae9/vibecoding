@@ -2,6 +2,20 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
+import {
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import { Place, Transport, TransportMode, Category } from '@/lib/types'
 import SearchSheet from '@/components/SearchSheet'
 import PlaceCard from '@/components/PlaceCard'
@@ -15,6 +29,11 @@ export default function Home() {
   const [showSearch, setShowSearch] = useState(false)
   const [showMap, setShowMap] = useState(false)
   const [initialized, setInitialized] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+  )
 
   useEffect(() => {
     fetch('/api/init').then(() => {
@@ -84,6 +103,23 @@ export default function Home() {
     })
   }
 
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = places.findIndex(p => p.id === active.id)
+    const newIndex = places.findIndex(p => p.id === over.id)
+
+    const reordered = arrayMove(places, oldIndex, newIndex).map((p, i) => ({ ...p, order_index: i }))
+    setPlaces(reordered)
+
+    await fetch('/api/places/reorder', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reordered.map(p => ({ id: p.id, order_index: p.order_index }))),
+    })
+  }
+
   const getDirections = useCallback((from: Place, to: Place, mode: TransportMode) => {
     const modeMap: Record<TransportMode, string> = { walk: 'walk', car: 'car', transit: 'public' }
     const naverMode = modeMap[mode]
@@ -99,7 +135,11 @@ export default function Home() {
 
   const visitedCount = places.filter(p => p.is_visited).length
 
-  const initialCenter = (() => {
+  const mapInitialCenter = (() => {
+    if (selectedId) {
+      const selected = places.find(p => p.id === selectedId)
+      if (selected) return { lat: selected.lat, lng: selected.lng }
+    }
     const unvisited = places
       .filter(p => !p.is_visited && p.visit_time)
       .sort((a, b) => (a.visit_time! > b.visit_time! ? 1 : -1))
@@ -126,7 +166,8 @@ export default function Home() {
             places={places}
             transports={transports}
             selectedId={selectedId}
-            initialCenter={initialCenter}
+            initialCenter={mapInitialCenter}
+            initialZoom={selectedId ? 17 : 14}
             onMarkerClick={p => setSelectedId(p.id)}
           />
           <button
@@ -173,27 +214,31 @@ export default function Home() {
             <p className="text-xs text-pink-300">+ 버튼을 눌러 첫 장소를 추가해보세요</p>
           </div>
         ) : (
-          places.map((place, i) => {
-            const nextPlace = places[i + 1] ?? null
-            const transport = transports.find(
-              t => t.from_place_id === place.id && t.to_place_id === nextPlace?.id
-            ) ?? null
-            return (
-              <PlaceCard
-                key={place.id}
-                place={place}
-                index={i}
-                isSelected={selectedId === place.id}
-                nextPlace={nextPlace}
-                transport={transport}
-                onSelect={() => setSelectedId(prev => prev === place.id ? null : place.id)}
-                onUpdate={updated => updatePlace(place.id, updated)}
-                onDelete={() => deletePlace(place.id)}
-                onTransportChange={mode => nextPlace && setTransportMode(place.id, nextPlace.id, mode)}
-                onGetDirections={() => nextPlace && transport && getDirections(place, nextPlace, transport.mode)}
-              />
-            )
-          })
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={places.map(p => p.id)} strategy={verticalListSortingStrategy}>
+              {places.map((place, i) => {
+                const nextPlace = places[i + 1] ?? null
+                const transport = transports.find(
+                  t => t.from_place_id === place.id && t.to_place_id === nextPlace?.id
+                ) ?? null
+                return (
+                  <PlaceCard
+                    key={place.id}
+                    place={place}
+                    index={i}
+                    isSelected={selectedId === place.id}
+                    nextPlace={nextPlace}
+                    transport={transport}
+                    onSelect={() => setSelectedId(prev => prev === place.id ? null : place.id)}
+                    onUpdate={updated => updatePlace(place.id, updated)}
+                    onDelete={() => deletePlace(place.id)}
+                    onTransportChange={mode => nextPlace && setTransportMode(place.id, nextPlace.id, mode)}
+                    onGetDirections={() => nextPlace && transport && getDirections(place, nextPlace, transport.mode)}
+                  />
+                )
+              })}
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 

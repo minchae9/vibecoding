@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { Place, Category, TransportMode, Transport, CATEGORY_CONFIG, TRANSPORT_CONFIG } from '@/lib/types'
 
 interface Props {
@@ -14,6 +16,18 @@ interface Props {
   onDelete: () => void
   onTransportChange: (mode: TransportMode) => void
   onGetDirections: () => void
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+function formatDistance(km: number): string {
+  return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`
 }
 
 export default function PlaceCard({
@@ -30,16 +44,31 @@ export default function PlaceCard({
   })
   const config = CATEGORY_CONFIG[place.category]
 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: place.id,
+    disabled: editing,
+  })
+
+  const distance = nextPlace ? haversineKm(place.lat, place.lng, nextPlace.lat, nextPlace.lng) : null
+
   function saveEdit() {
     onUpdate(form)
     setEditing(false)
   }
 
   return (
-    <div className={`transition-opacity ${place.is_visited ? 'opacity-40' : 'opacity-100'}`}>
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={place.is_visited ? 'opacity-40' : 'opacity-100'}
+    >
       <div
         className={`rounded-2xl border-2 transition-all ${
-          isSelected ? 'border-pink-400 shadow-md shadow-pink-100' : 'border-gray-100'
+          isDragging
+            ? 'border-pink-300 shadow-xl shadow-pink-100 bg-white scale-[1.02]'
+            : isSelected
+            ? 'border-pink-400 shadow-md shadow-pink-100'
+            : 'border-gray-100'
         } ${place.is_visited ? 'bg-gray-50' : 'bg-white'}`}
         onClick={() => !editing && onSelect()}
       >
@@ -94,7 +123,12 @@ export default function PlaceCard({
         ) : (
           <div className="p-4">
             <div className="flex items-start gap-3">
-              <div className={`w-8 h-8 rounded-full ${config.color} flex items-center justify-center text-white text-sm font-bold shrink-0`}>
+              <div
+                {...attributes}
+                {...listeners}
+                className={`touch-none cursor-grab active:cursor-grabbing w-8 h-8 rounded-full ${config.color} flex items-center justify-center text-white text-sm font-bold shrink-0 select-none`}
+                onClick={e => e.stopPropagation()}
+              >
                 {index + 1}
               </div>
               <div className="flex-1 min-w-0">
@@ -138,7 +172,7 @@ export default function PlaceCard({
       {nextPlace && (
         <div className="flex items-center gap-2 py-2 px-3" onClick={e => e.stopPropagation()}>
           <div className="w-0.5 h-4 bg-gray-200 ml-4 shrink-0" />
-          <div className="flex gap-1.5 flex-1">
+          <div className="flex gap-1.5 flex-1 flex-wrap items-center">
             {(['walk', 'car', 'transit'] as TransportMode[]).map(mode => {
               const cfg = TRANSPORT_CONFIG[mode]
               return (
@@ -155,6 +189,9 @@ export default function PlaceCard({
                 </button>
               )
             })}
+            {distance !== null && (
+              <span className="text-xs text-gray-400">{formatDistance(distance)}</span>
+            )}
           </div>
           {transport && (
             <button

@@ -14,10 +14,11 @@ interface Props {
   transports: Transport[]
   selectedId: number | null
   initialCenter: { lat: number; lng: number } | null
+  initialZoom?: number
   onMarkerClick?: (place: Place) => void
 }
 
-export default function NaverMap({ places, transports, selectedId, initialCenter, onMarkerClick }: Props) {
+export default function NaverMap({ places, transports, selectedId, initialCenter, initialZoom = 15, onMarkerClick }: Props) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstance = useRef<any>(null)
   const markers = useRef<Map<number, any>>(new Map())
@@ -32,12 +33,12 @@ export default function NaverMap({ places, transports, selectedId, initialCenter
 
     mapInstance.current = new window.naver.maps.Map(mapRef.current, {
       center,
-      zoom: 15,
+      zoom: initialZoom,
       mapDataControl: false,
       scaleControl: false,
     })
     initialCenterSet.current = true
-  }, [initialCenter])
+  }, [initialCenter, initialZoom])
 
   useEffect(() => {
     if (window.naver?.maps) {
@@ -107,7 +108,10 @@ export default function NaverMap({ places, transports, selectedId, initialCenter
 
     if (selectedId) {
       const selected = places.find(p => p.id === selectedId)
-      if (selected) mapInstance.current.panTo(new window.naver.maps.LatLng(selected.lat, selected.lng))
+      if (selected) {
+        mapInstance.current.setCenter(new window.naver.maps.LatLng(selected.lat, selected.lng))
+        mapInstance.current.setZoom(17)
+      }
     } else if (places.length > 1) {
       const bounds = new window.naver.maps.LatLngBounds()
       places.forEach(p => bounds.extend(new window.naver.maps.LatLng(p.lat, p.lng)))
