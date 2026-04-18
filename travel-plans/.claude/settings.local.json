@@ -12,7 +12,10 @@
       "Bash(curl -s http://localhost:3000/api/init)",
       "Bash(curl -s http://localhost:3000/api/places)",
       "Bash(vercel --version)",
-      "Bash(ls .vercel/project.json)"
+      "Bash(ls .vercel/project.json)",
+      "Bash(vercel --prod)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }

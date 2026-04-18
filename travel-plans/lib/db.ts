@@ -1,8 +1,17 @@
-import { neon } from '@neondatabase/serverless'
+import { neon, NeonQueryFunction } from '@neondatabase/serverless'
 
-const sql = neon(process.env.DATABASE_URL!)
+let _sql: NeonQueryFunction<false, false> | null = null
+
+function getSQL() {
+  if (!_sql) {
+    if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not set')
+    _sql = neon(process.env.DATABASE_URL)
+  }
+  return _sql
+}
 
 export async function initDB() {
+  const sql = getSQL()
   await sql`
     CREATE TABLE IF NOT EXISTS places (
       id SERIAL PRIMARY KEY,
@@ -31,4 +40,6 @@ export async function initDB() {
   `
 }
 
-export { sql }
+export function sql() {
+  return getSQL()
+}
