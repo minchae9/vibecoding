@@ -13,25 +13,31 @@ interface Props {
   places: Place[]
   transports: Transport[]
   selectedId: number | null
-  onMapClick?: (lat: number, lng: number) => void
+  initialCenter: { lat: number; lng: number } | null
   onMarkerClick?: (place: Place) => void
 }
 
-export default function NaverMap({ places, transports, selectedId, onMarkerClick }: Props) {
+export default function NaverMap({ places, transports, selectedId, initialCenter, onMarkerClick }: Props) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstance = useRef<any>(null)
   const markers = useRef<Map<number, any>>(new Map())
   const polylines = useRef<any[]>([])
+  const initialCenterSet = useRef(false)
 
   const initMap = useCallback(() => {
     if (!mapRef.current || !window.naver) return
+    const center = initialCenter
+      ? new window.naver.maps.LatLng(initialCenter.lat, initialCenter.lng)
+      : new window.naver.maps.LatLng(37.5665, 126.9780)
+
     mapInstance.current = new window.naver.maps.Map(mapRef.current, {
-      center: new window.naver.maps.LatLng(37.5665, 126.9780),
-      zoom: 13,
+      center,
+      zoom: 15,
       mapDataControl: false,
       scaleControl: false,
     })
-  }, [])
+    initialCenterSet.current = true
+  }, [initialCenter])
 
   useEffect(() => {
     if (window.naver?.maps) {
@@ -50,12 +56,8 @@ export default function NaverMap({ places, transports, selectedId, onMarkerClick
 
     polylines.current.forEach(p => p.setMap(null))
     polylines.current = []
-
     markers.current.forEach(m => m.setMap(null))
     markers.current.clear()
-
-    const visible = places.filter(p => !p.is_visited)
-    const visited = places.filter(p => p.is_visited)
 
     const addMarker = (place: Place, opacity: number) => {
       const config = CATEGORY_CONFIG[place.category]
@@ -81,16 +83,12 @@ export default function NaverMap({ places, transports, selectedId, onMarkerClick
           anchor: new window.naver.maps.Point(size / 2, size / 2),
         },
       })
-
-      window.naver.maps.Event.addListener(marker, 'click', () => {
-        onMarkerClick?.(place)
-      })
-
+      window.naver.maps.Event.addListener(marker, 'click', () => onMarkerClick?.(place))
       markers.current.set(place.id, marker)
     }
 
-    visible.forEach(p => addMarker(p, 1))
-    visited.forEach(p => addMarker(p, 0.35))
+    places.filter(p => !p.is_visited).forEach(p => addMarker(p, 1))
+    places.filter(p => p.is_visited).forEach(p => addMarker(p, 0.35))
 
     transports.forEach(t => {
       if (!t.route_path || t.route_path.length === 0) return
@@ -107,17 +105,13 @@ export default function NaverMap({ places, transports, selectedId, onMarkerClick
       polylines.current.push(polyline)
     })
 
-    if (places.length > 0 && !selectedId) {
+    if (selectedId) {
+      const selected = places.find(p => p.id === selectedId)
+      if (selected) mapInstance.current.panTo(new window.naver.maps.LatLng(selected.lat, selected.lng))
+    } else if (places.length > 1) {
       const bounds = new window.naver.maps.LatLngBounds()
       places.forEach(p => bounds.extend(new window.naver.maps.LatLng(p.lat, p.lng)))
       mapInstance.current.fitBounds(bounds, { top: 80, right: 20, bottom: 300, left: 20 })
-    }
-
-    if (selectedId) {
-      const selected = places.find(p => p.id === selectedId)
-      if (selected) {
-        mapInstance.current.panTo(new window.naver.maps.LatLng(selected.lat, selected.lng))
-      }
     }
   }, [places, transports, selectedId, onMarkerClick])
 

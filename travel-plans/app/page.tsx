@@ -132,6 +132,16 @@ export default function Home() {
 
   const visitedCount = places.filter(p => p.is_visited).length
 
+  const initialCenter = (() => {
+    const unvisited = places
+      .filter(p => !p.is_visited && p.visit_time)
+      .sort((a, b) => (a.visit_time! > b.visit_time! ? 1 : -1))
+    if (unvisited.length > 0) return { lat: unvisited[0].lat, lng: unvisited[0].lng }
+    const first = places.find(p => !p.is_visited)
+    if (first) return { lat: first.lat, lng: first.lng }
+    return null
+  })()
+
   const drawerHeights: Record<DrawerState, string> = {
     collapsed: 'h-24',
     half: 'h-[55vh]',
@@ -170,6 +180,7 @@ export default function Home() {
           places={places}
           transports={transports}
           selectedId={selectedId}
+          initialCenter={initialCenter}
           onMarkerClick={p => { setSelectedId(p.id); setDrawerState('half') }}
         />
       </div>

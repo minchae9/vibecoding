@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   if (!query) return NextResponse.json({ items: [] })
 
   const res = await fetch(
-    `https://naveropenapi.apigw.ntruss.com/map-place/v1/search?query=${encodeURIComponent(query)}&language=ko`,
+    `https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=${encodeURIComponent(query)}`,
     {
       headers: {
         'X-NCP-APIGW-API-KEY-ID': process.env.NAVER_CLIENT_ID!,
@@ -21,14 +21,14 @@ export async function GET(req: NextRequest) {
 
   const data = await res.json()
 
-  // NCP Place API 응답을 기존 형식에 맞게 변환
-  const items = (data.places || []).map((p: any) => ({
-    title: p.name,
-    address: p.address,
-    roadAddress: p.roadAddress,
-    mapx: String(Math.round(parseFloat(p.x) * 1e7)),
-    mapy: String(Math.round(parseFloat(p.y) * 1e7)),
-    category: p.category,
+  const items = (data.addresses || []).map((a: any) => ({
+    title: a.roadAddress || a.jibunAddress,
+    address: a.jibunAddress,
+    roadAddress: a.roadAddress,
+    // geocoding returns x=lng, y=lat as strings
+    x: a.x,
+    y: a.y,
+    category: '',
   }))
 
   return NextResponse.json({ items })
