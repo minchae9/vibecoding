@@ -91,22 +91,7 @@ export default function NaverMap({ places, transports, selectedId, initialCenter
     places.filter(p => !p.is_visited).forEach(p => addMarker(p, 1))
     places.filter(p => p.is_visited).forEach(p => addMarker(p, 0.35))
 
-    transports.forEach(t => {
-      if (!t.route_path || t.route_path.length === 0) return
-      const config = TRANSPORT_CONFIG[t.mode]
-      const path = t.route_path.map(([lat, lng]) => new window.naver.maps.LatLng(lat, lng))
-      const polyline = new window.naver.maps.Polyline({
-        map: mapInstance.current,
-        path,
-        strokeColor: config.color,
-        strokeWeight: 4,
-        strokeOpacity: 0.8,
-        strokeStyle: t.mode === 'walk' ? 'shortdash' : 'solid',
-      })
-      polylines.current.push(polyline)
-    })
-
-    if (selectedId) {
+if (selectedId) {
       const selected = places.find(p => p.id === selectedId)
       if (selected) {
         mapInstance.current.setCenter(new window.naver.maps.LatLng(selected.lat, selected.lng))
