@@ -81,7 +81,7 @@ export default function SearchSheet({ onSelect, onClose }: Props) {
           <>
             <div className="p-4 flex gap-2">
               <input
-                className="flex-1 border border-pink-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
+                className="flex-1 border border-pink-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-300"
                 placeholder="장소명 검색 (예: 성수동 카페)"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
