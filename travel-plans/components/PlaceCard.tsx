@@ -25,7 +25,7 @@ export default function PlaceCard({
     name: place.name,
     category: place.category as Category,
     visit_time: place.visit_time || '',
-    duration_min: place.duration_min || 60,
+    duration_min: place.duration_min ?? ('' as unknown as number),
     memo: place.memo || '',
   })
   const config = CATEGORY_CONFIG[place.category]
@@ -75,7 +75,8 @@ export default function PlaceCard({
                 className="border border-pink-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300"
                 placeholder="분"
                 value={form.duration_min}
-                onChange={e => setForm(f => ({ ...f, duration_min: Number(e.target.value) }))}
+                onFocus={e => { if (e.target.value === '0') setForm(f => ({ ...f, duration_min: '' as unknown as number })) }}
+                onChange={e => setForm(f => ({ ...f, duration_min: e.target.value === '' ? '' as unknown as number : Number(e.target.value) }))}
               />
             </div>
             <textarea
