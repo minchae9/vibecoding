@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(winget upgrade:*)",
+      "Bash(npm update *)",
+      "Bash(npx create-next-app@latest *)",
+      "Bash(npm install *)",
+      "Bash(mkdir -p \"C:/Users/김민채/Desktop/vibecoding/travel-plans/app/api/places/[id]\")",
+      "Bash(mkdir -p \"C:/Users/김민채/Desktop/vibecoding/travel-plans/app/api/transports/[id]\")",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000/api/init)",
+      "Bash(curl -s http://localhost:3000/api/places)",
+      "Bash(vercel --version)",
+      "Bash(ls .vercel/project.json)"
+    ]
+  }
+}
