@@ -171,8 +171,7 @@ export default function PlaceCard({
 
       {nextPlace && (
         <div className="flex items-center gap-2 py-2 px-3" onClick={e => e.stopPropagation()}>
-          <div className="w-0.5 h-4 bg-gray-200 ml-4 shrink-0" />
-          <div className="flex gap-1.5 flex-1 flex-wrap items-center">
+<div className="flex gap-1.5 flex-1 flex-wrap items-center">
             {(['walk', 'car', 'transit'] as TransportMode[]).map(mode => {
               const cfg = TRANSPORT_CONFIG[mode]
               return (
