@@ -88,46 +88,17 @@ export default function Home() {
     })
   }
 
-  const getDirections = useCallback(async (from: Place, to: Place, mode: TransportMode) => {
-    const start = `${from.lng},${from.lat}`
-    const goal = `${to.lng},${to.lat}`
-    const res = await fetch(`/api/directions?start=${start}&goal=${goal}&mode=${mode}`)
-    const data = await res.json()
+  const getDirections = useCallback((from: Place, to: Place, mode: TransportMode) => {
+    const modeMap: Record<TransportMode, string> = { walk: 'walk', car: 'car', transit: 'public' }
+    const naverMode = modeMap[mode]
 
-    let path: [number, number][] = []
-    let durationMin: number | null = null
+    const appUrl = `nmap://route/${naverMode}?slat=${from.lat}&slng=${from.lng}&sname=${encodeURIComponent(from.name)}&dlat=${to.lat}&dlng=${to.lng}&dname=${encodeURIComponent(to.name)}&appname=com.travel.plans`
+    const webUrl = `https://map.naver.com/v5/directions/${from.lng},${from.lat},${encodeURIComponent(from.name)},-1/${to.lng},${to.lat},${encodeURIComponent(to.name)},-1/${naverMode}`
 
-    if (mode === 'car' && data.route?.trafast?.[0]) {
-      const route = data.route.trafast[0]
-      durationMin = Math.round(route.summary.duration / 60000)
-      path = route.path.map(([lng, lat]: [number, number]) => [lat, lng])
-    } else if (mode === 'transit' && data.metaData?.plan?.itineraries?.[0]) {
-      const legs = data.metaData.plan.itineraries[0].legs
-      durationMin = Math.round(data.metaData.plan.itineraries[0].duration / 60)
-      legs.forEach((leg: any) => {
-        if (leg.legGeometry?.points) {
-          leg.legGeometry.points.split(' ').forEach((pt: string) => {
-            const [lat, lng] = pt.split(',').map(Number)
-            path.push([lat, lng])
-          })
-        }
-      })
-    } else {
-      path = [[from.lat, from.lng], [to.lat, to.lng]]
-    }
-
-    const saveRes = await fetch('/api/transports', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from_place_id: from.id, to_place_id: to.id, mode, duration_min: durationMin, route_path: path,
-      }),
-    })
-    const saved = await saveRes.json()
-    setTransports(prev => {
-      const filtered = prev.filter(t => !(t.from_place_id === from.id && t.to_place_id === to.id))
-      return [...filtered, { ...saved, route_path: path }]
-    })
+    window.location.href = appUrl
+    setTimeout(() => {
+      if (!document.hidden) window.open(webUrl, '_blank')
+    }, 2000)
   }, [])
 
   const visitedCount = places.filter(p => p.is_visited).length
